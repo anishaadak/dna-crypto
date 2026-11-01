@@ -1,93 +1,80 @@
-# dna-crypto
+# DNA Crypto
 
-A small educational project that encrypts a message with a password and then writes the encrypted bytes as a DNA string (`A`, `C`, `G`, `T`). Decoding the DNA and supplying the same password gives the original message back.
+Encrypts a message with a password and writes the result as a string of DNA letters (A, C, G, T). It can also turn the DNA back into the original message using the same password.
 
-The DNA part is only a fun way to **display and store** the result. The actual security comes from AES-256-GCM (see [Security](#security)).
+## How it works
 
-## What it does
+message -> encrypt with AES-256-GCM (key from password using scrypt) -> bytes -> DNA letters -> bytes -> decrypt -> message
 
-- **Encoding** (`dnacrypto/encoding.py`) — every byte is turned into 8 bits, and each pair of bits is mapped to one DNA letter: `00 → A`, `01 → C`, `10 → G`, `11 → T`. The reverse mapping restores the original bytes.
-- **Encryption** (`dnacrypto/crypto.py`) — a password is stretched into a 32-byte key with scrypt, and the message is encrypted with AES-256-GCM. The output is `salt + nonce + ciphertext` (the GCM authentication tag is appended to the ciphertext).
-- **CLI** (`dnacrypto/cli.py`) — `encrypt` and `decrypt` commands that prompt for the password without echoing it.
-- **Demo** (`main.py`) — an interactive round trip: type a message and password, see the DNA, then see it decrypted again.
+Each byte becomes 8 bits, and every pair of bits maps to one DNA letter:
 
-## Requirements
+| Bits | Letter |
+|------|--------|
+| 00   | A      |
+| 01   | C      |
+| 10   | G      |
+| 11   | T      |
 
-- Python 3.10 or newer
-- [`cryptography`](https://pypi.org/project/cryptography/) (AES-GCM and scrypt)
-- [`pytest`](https://pypi.org/project/pytest/) (only needed to run the tests)
+So 1 byte becomes exactly 4 DNA letters. For example, the text "Hi" becomes:
 
-## Install
+`CAGACGGC`
 
-```bash
-pip install cryptography pytest
-```
+Decoding works the other way: letters turn back into bits, bits turn back into bytes, and the password unlocks the original message.
 
-Using a virtual environment is recommended:
+## Security note
+
+The security comes from AES-256-GCM and scrypt, which are standard, well-tested algorithms from the cryptography library. The DNA letters are only a different way of writing the encrypted bytes.
+
+This project is not a new cipher, and the DNA step does not make it stronger.
+
+## Setup
 
 ```bash
 python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS / Linux
-source .venv/bin/activate
+```
 
+Activate it:
+
+- Windows: `.venv\Scripts\activate`
+- Mac/Linux: `source .venv/bin/activate`
+
+Then install:
+
+```bash
 pip install cryptography pytest
 ```
 
-## Run the demo
+## Usage
 
-From the project root:
+Run the demo:
 
 ```bash
 python main.py
 ```
 
-It asks for a message and a password, then prints:
-
-```
-DNA: CAGACGGC...
-Decrypted: your message
-Match: True
-```
-
-For example:
-
-```
-Message: hello
-Password: secret
-DNA: ...
-Decrypted: hello
-Match: True
-```
-
-### Command line
-
-The same functionality is available as a CLI:
+Or use the command line:
 
 ```bash
 python -m dnacrypto.cli encrypt --text "hello"
-python -m dnacrypto.cli decrypt --dna "CAGACGGC..."
+python -m dnacrypto.cli decrypt --dna "PASTE_DNA_HERE"
 ```
 
-Both commands prompt for the password. (On Windows, `getpass` reads from the console, so you cannot pipe the password in.)
+The password is asked for interactively and is not shown while you type it.
 
-## Run the tests
+## Tests
 
 ```bash
 python -m pytest
 ```
 
-The tests cover the DNA encoding, a full byte round trip, successful decrypt, wrong-password rejection, and tamper detection.
+## Project structure
 
-## Security
-
-**AES-256-GCM provides the security. DNA is only the way the encrypted result is written down.**
-
-- The password is converted into a 32-byte key with **scrypt** (`n=2**15, r=8, p=1`). Scrypt is deliberately slow and memory-hungry, which makes guessing passwords expensive.
-- A fresh random **16-byte salt** is generated for every encryption, so the same message and password never produce the same key or the same output twice.
-- A fresh random **12-byte nonce** is generated for every encryption and must never repeat for a given key; generating it randomly per message is what keeps GCM safe here.
-- **AES-256-GCM** encrypts the message and authenticates it. If the password is wrong or even one bit of the stored data is changed, decryption fails with `InvalidTag` instead of returning corrupted plaintext.
-- The DNA step is a reversible 2-bits-per-letter encoding. It hides nothing and adds no cryptographic strength — the DNA string is exactly as sensitive as the raw ciphertext. Anyone with the DNA string and the password can decrypt it; anyone without the password cannot.
-
-This is a learning project, not an audited security product. Choose a strong password, and treat the DNA output like any other ciphertext.
+```
+dnacrypto/
+  encoding.py   # bytes <-> DNA letters
+  crypto.py     # lock/unlock with AES-GCM
+  cli.py        # encrypt and decrypt commands
+tests/
+  test_basic.py # tests
+main.py         # demo
+```
