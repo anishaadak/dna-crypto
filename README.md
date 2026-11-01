@@ -23,8 +23,6 @@ The real program encodes the *encrypted* bytes, so its output looks random. The 
 
 Decoding works the other way: letters turn back into bits, bits turn back into bytes, and the password unlocks the original message.
 
-Decoding works the other way: letters turn back into bits, bits turn back into bytes, and the password unlocks the original message.
-
 ## Security note
 
 The security comes from AES-256-GCM and scrypt, which are standard, well-tested algorithms from the cryptography library. The DNA letters are only a different way of writing the encrypted bytes.
@@ -51,6 +49,8 @@ pip install cryptography pytest
 ## Usage
 
 Run the demo:
+Password: random123(invisible when put in)
+GAACCCAATCTCCAAATTGCTTAGGCTACAGTCGTGGGTTGTCATATCATTTCTTAGGATCTGACTAATATATACTGCCCACCATTTGAATGGTAGATCACGCTCTTA..
 
 ```bash
 python main.py
