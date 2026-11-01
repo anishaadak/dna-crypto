@@ -15,9 +15,13 @@ Each byte becomes 8 bits, and every pair of bits maps to one DNA letter:
 | 10   | G      |
 | 11   | T      |
 
-So 1 byte becomes exactly 4 DNA letters. For example, the text "Hi" becomes:
+So 1 byte becomes exactly 4 DNA letters. For example, encoding the raw text "Hi" with only the DNA step gives:
 
 `CAGACGGC`
+
+The real program encodes the *encrypted* bytes, so its output looks random. The encrypted data also carries a 16-byte salt, a 12-byte nonce and a 16-byte authentication tag. The DNA length is therefore 4 × (message bytes + 44) letters. For example, "hello" gives 196 letters.
+
+Decoding works the other way: letters turn back into bits, bits turn back into bytes, and the password unlocks the original message.
 
 Decoding works the other way: letters turn back into bits, bits turn back into bytes, and the password unlocks the original message.
 
@@ -78,3 +82,10 @@ tests/
   test_basic.py # tests
 main.py         # demo
 ```
+## Limitations
+
+- The DNA step is only an encoding. It is not a security feature, and the project is not a new cipher.
+- A weak password is still weak. The strength of the encryption depends on the password.
+- There is no error correction, so one wrong letter makes decryption fail.
+- The DNA output is not designed for real DNA synthesis. It can contain long runs of the same letter, which real labs avoid.
+- This is a learning project and has not been security-audited. Do not use it to protect sensitive data.
