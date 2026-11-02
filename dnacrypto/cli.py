@@ -4,30 +4,24 @@ import getpass
 from cryptography.exceptions import InvalidTag
 
 from dnacrypto.crypto import lock, unlock
-from dnacrypto.encoding import bytes_to_dna, dna_to_bytes
-
-VALID_DNA = {"A", "C", "G", "T"}
-
-
-def is_valid_dna(dna: str) -> bool:
-    return bool(dna) and all(letter in VALID_DNA for letter in dna)
+from dnacrypto.encoding import bytes_to_dna_safe, dna_to_bytes_safe
 
 
 def encrypt_command(args) -> int:
     password = getpass.getpass("Password: ")
-    dna = bytes_to_dna(lock(args.text, password))
+    dna = bytes_to_dna_safe(lock(args.text, password))
     print(dna)
     return 0
 
 
 def decrypt_command(args) -> int:
     dna = args.dna
-    if not is_valid_dna(dna):
-        print("That is not valid DNA.")
-        return 1
     password = getpass.getpass("Password: ")
     try:
-        message = unlock(dna_to_bytes(dna), password)
+        message = unlock(dna_to_bytes_safe(dna), password)
+    except ValueError:
+        print("That is not valid DNA.")
+        return 1
     except InvalidTag:
         print("Wrong password, or the data was changed.")
         return 1

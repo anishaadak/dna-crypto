@@ -4,6 +4,10 @@ Encrypts a message with a password and writes the result as a string of DNA lett
 
 ## How it works
 
+## Safe DNA encoding
+
+The basic mapping (00=A, 01=C, 10=G, 11=T) can produce long runs of the same letter, which real DNA labs avoid. The safe encoding never repeats a letter: after each letter, only the other three letters are allowed, and the data is written as a base-3 number that picks among them. It uses about 26% more letters (about 1.58 bits per letter instead of 2). A 4-byte length is stored first so the decoder knows where the data ends.
+
 message -> encrypt with AES-256-GCM (key from password using scrypt) -> bytes -> DNA letters -> bytes -> decrypt -> message
 
 Each byte becomes 8 bits, and every pair of bits maps to one DNA letter:
@@ -89,3 +93,4 @@ main.py         # demo
 - There is no error correction, so one wrong letter makes decryption fail.
 - The DNA output is not designed for real DNA synthesis. It can contain long runs of the same letter, which real labs avoid.
 - This is a learning project and has not been security-audited. Do not use it to protect sensitive data.
+- The safe encoding avoids repeated letters, but it does not guarantee balanced GC content and it has no error correction. It converts the whole message as one big number, so it is slow for large messages and is meant for short ones.
