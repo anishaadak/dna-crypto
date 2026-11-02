@@ -95,3 +95,46 @@ def longest_run(dna: str) -> int:
         else:
             current = 1
     return best
+
+
+def bytes_to_dna_rot(data: bytes) -> str:
+    prev = "A"
+    output = []
+    for byte in data:
+        digits = []
+        n = byte
+        for _ in range(6):
+            digits.append(n % 3)
+            n //= 3
+        digits.reverse()
+        for d in digits:
+            allowed = [x for x in "ACGT" if x != prev]
+            letter = allowed[d]
+            output.append(letter)
+            prev = letter
+    return "".join(output)
+
+
+def dna_to_bytes_rot(dna: str) -> bytes:
+    if len(dna) % 6 != 0:
+        raise ValueError
+    for c in dna:
+        if c not in "ACGT":
+            raise ValueError
+    prev = "A"
+    result = bytearray()
+    for i in range(0, len(dna), 6):
+        group = dna[i:i + 6]
+        value = 0
+        for letter in group:
+            allowed = [x for x in "ACGT" if x != prev]
+            if letter in allowed:
+                d = allowed.index(letter)
+            else:
+                d = 0
+            value = value * 3 + d
+            prev = letter
+        if value > 255:
+            value = 0
+        result.append(value)
+    return bytes(result)
