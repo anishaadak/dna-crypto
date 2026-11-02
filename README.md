@@ -27,6 +27,22 @@ The real program encodes the *encrypted* bytes, so its output looks random. The 
 
 Decoding works the other way: letters turn back into bits, bits turn back into bytes, and the password unlocks the original message.
 
+## Checking DNA for damage
+
+    python -m dnacrypto.cli check --dna "PASTE_DNA_HERE"
+
+The check reports one of these results:
+
+| Result | Meaning |
+|---|---|
+| INVALID_DNA | Structure is broken: wrong letters, a repeated letter, or the wrong length |
+| CHANGED | The checksum does not match, so the DNA was altered after it was written |
+| WRONG_PASSWORD_OR_TAMPERED | Checksum matches, but decryption fails |
+| INTACT | Decrypts correctly (needs the password) |
+| NO_DAMAGE_FOUND | Nothing looks wrong, but this can't be confirmed without the password |
+
+The check cannot tell accidental damage from a deliberate edit. The CRC32 checksum catches accidents without the password, but anyone can recompute it. Real tamper protection comes from the AES-GCM tag, which needs the password. The check detects problems but does not fix them (there is no error correction).
+
 ## Security note
 
 The security comes from AES-256-GCM and scrypt, which are standard, well-tested algorithms from the cryptography library. The DNA letters are only a different way of writing the encrypted bytes.
