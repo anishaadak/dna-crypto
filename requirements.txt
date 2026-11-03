@@ -1,0 +1,4 @@
+cryptography
+reedsolo
+streamlit
+pytest
