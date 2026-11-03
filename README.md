@@ -1,5 +1,7 @@
 # DNA Crypto
 
+LIVE DEMO APP: https://dna-crypto-sw3pbuplvpvfbamcbrscop.streamlit.app/
+
 Encrypts a message with a password and writes the result as a string of DNA letters (A, C, G, T). It can turn the DNA back into the original message, check whether DNA has been damaged, and repair changed letters.
 
 ## How it works
