@@ -280,3 +280,30 @@ st.caption(
 )
 st.button("Decrypt", on_click=do_decrypt)
 show_status("status_decrypt")
+
+with st.expander("Try it: turn one byte into letters"):
+    value = st.number_input(
+        "Byte value (0 to 255)", min_value=0, max_value=255, value=72, step=1,
+        key="lab_byte",
+    )
+    prev = st.selectbox("Letter before it", ["A", "C", "G", "T"], key="lab_prev")
+    st.write(format(int(value), "08b"))
+    digits, steps = explain_byte(int(value), prev)
+    table_rows = []
+    for step_num, step in enumerate(steps, start=1):
+        table_rows.append(
+            {
+                "Step": step_num,
+                "Letter before": step[0],
+                "Allowed letters": ", ".join(step[1]),
+                "Digit": digits[step_num - 1],
+                "Chosen letter": step[2],
+            }
+        )
+    st.table(table_rows)
+    letters = "".join(s[2] for s in steps)
+    st.success(f"{int(value)} becomes {letters}")
+    st.caption(
+        "Each digit (0, 1 or 2) picks one of the three letters that differ from "
+        "the letter before. That is why a letter never repeats."
+    )
