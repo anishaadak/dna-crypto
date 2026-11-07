@@ -7,10 +7,10 @@ from dnacrypto.pipeline import (
     check_dna,
     damage_letter,
     decrypt_from_dna,
-    encrypt_to_dna,
+    encrypt_steps,
     repair_dna,
 )
-from dnacrypto.encoding import gc_content, longest_run
+from dnacrypto.encoding import explain_byte, gc_content, longest_run
 
 st.set_page_config(page_title="DNA Crypto", page_icon="🧬")
 st.title("DNA Crypto")
@@ -20,6 +20,7 @@ for key, value in {
     "dna": "",
     "original": "",
     "original_message": "",
+    "steps": None,
     "status_encrypt": None,
     "status_dna": None,
     "status_decrypt": None,
@@ -42,16 +43,31 @@ def show_status(key):
         st.info(text)
 
 
+def byte_rows(data: bytes, count: int = 8) -> list[dict]:
+    rows = []
+    for b in data[:count]:
+        rows.append(
+            {
+                "Byte": b,
+                "Hex": f"{b:02x}",
+                "Binary": format(b, "08b"),
+            }
+        )
+    return rows
+
+
 def do_encrypt():
     message = st.session_state.message
     password = st.session_state.enc_password
     if not message or not password:
         st.session_state.status_encrypt = ("error", "Type a message and a password first.")
     else:
-        dna = encrypt_to_dna(message, password)
+        steps = encrypt_steps(message, password)
+        dna = steps["dna"]
         st.session_state.dna = dna
         st.session_state.original = dna
         st.session_state.original_message = message
+        st.session_state.steps = steps
         st.session_state.message = ""
         st.session_state.enc_password = ""
         st.session_state.status_encrypt = (
@@ -101,6 +117,7 @@ def do_reset():
     else:
         st.session_state.status_dna = ("error", "Encrypt a message first.")
     st.session_state.status_decrypt = None
+
 
 def do_repair():
     try:
@@ -167,6 +184,72 @@ st.text_area("Message", key="message")
 st.text_input("Encryption password", type="password", key="enc_password")
 st.button("Encrypt to DNA", on_click=do_encrypt)
 show_status("status_encrypt")
+
+if st.session_state.steps is not None:
+    steps = st.session_state.steps
+    with st.expander("Show how the message became DNA (binary, encrypted bytes, DNA)"):
+        st.markdown("**1. Your message as bytes**")
+        st.table(byte_rows(steps["message_bytes"]))
+        st.caption(
+            "Each character becomes one or more bytes. Only the first 8 bytes are shown."
+        )
+
+        st.markdown("**2. After AES-256-GCM encryption**")
+        st.code(f"salt: {steps['salt'].hex()}")
+        st.code(f"nonce: {steps['nonce'].hex()}")
+        st.table(byte_rows(steps["ciphertext"]))
+        st.code(f"tag: {steps['tag'].hex()}")
+        st.caption(
+            "The encrypted bytes look random. The pattern of the message is gone. "
+            "The key is not shown: it is made from your password and the salt, and "
+            "it never leaves the program."
+        )
+
+        st.markdown("**3. What gets written as DNA**")
+        part_rows = [
+            {"Part": "Salt", "Bytes": 16},
+            {"Part": "Nonce", "Bytes": 12},
+            {"Part": "Encrypted message", "Bytes": len(steps["ciphertext"])},
+            {"Part": "Tag", "Bytes": 16},
+            {"Part": "Checksum", "Bytes": 4},
+            {"Part": "Repair data", "Bytes": steps["parity_len"]},
+            {"Part": "Total", "Bytes": len(steps["coded"])},
+        ]
+        st.table(part_rows)
+        st.caption(
+            "Messages longer than 239 bytes get repair data added per block."
+        )
+
+        st.markdown("**4. Bytes become letters**")
+        prev = "A"
+        letter_rows = []
+        for b in steps["coded"][:8]:
+            digits, step_list = explain_byte(b, prev)
+            letters = "".join(s[2] for s in step_list)
+            letter_rows.append(
+                {
+                    "Byte": b,
+                    "Binary": format(b, "08b"),
+                    "Base-3 digits": " ".join(str(d) for d in digits),
+                    "Letters": letters,
+                }
+            )
+            prev = step_list[-1][2]
+        st.table(letter_rows)
+        st.caption(
+            "The data starts with the salt, so these first bytes are the salt."
+        )
+
+        st.markdown("**5. The DNA, in groups of 6**")
+        dna = steps["dna"]
+        groups = [dna[i : i + 6] for i in range(0, min(72, len(dna)), 6)]
+        code_text = " ".join(groups)
+        if len(dna) > 72:
+            code_text += " ..."
+        st.code(code_text)
+        st.caption(
+            "Each group of 6 letters is one byte."
+        )
 
 st.subheader("2. The DNA")
 st.text_area("DNA", key="dna", height=200)
