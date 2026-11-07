@@ -24,6 +24,29 @@ def encrypt_to_dna(message: str, password: str) -> str:
     return bytes_to_dna_rot(add_parity(seal(lock(message, password))))
 
 
+def encrypt_steps(message: str, password: str) -> dict:
+    package = lock(message, password)
+    salt = package[:16]
+    nonce = package[16:28]
+    locked = package[28:]
+    ciphertext = locked[:-16]
+    tag = locked[-16:]
+    sealed = seal(package)
+    coded = add_parity(sealed)
+    dna = bytes_to_dna_rot(coded)
+    return {
+        "message_bytes": message.encode(),
+        "salt": salt,
+        "nonce": nonce,
+        "ciphertext": ciphertext,
+        "tag": tag,
+        "checksum": sealed[-4:],
+        "parity_len": len(coded) - len(sealed),
+        "coded": coded,
+        "dna": dna,
+    }
+
+
 def decrypt_from_dna(dna: str, password: str) -> str:
     dna = "".join(dna.split()).upper()
     data = dna_to_bytes_rot(dna)
