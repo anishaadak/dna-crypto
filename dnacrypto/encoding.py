@@ -138,3 +138,24 @@ def dna_to_bytes_rot(dna: str) -> bytes:
             value = 0
         result.append(value)
     return bytes(result)
+
+
+def explain_byte(value: int, prev: str) -> tuple[list[int], list[tuple[str, list[str], str]]]:
+    if not 0 <= value <= 255:
+        raise ValueError
+    if prev not in "ACGT":
+        raise ValueError
+    digits = []
+    n = value
+    for _ in range(6):
+        digits.append(n % 3)
+        n //= 3
+    digits.reverse()
+    steps = []
+    current = prev
+    for d in digits:
+        allowed = [x for x in "ACGT" if x != current]
+        letter = allowed[d]
+        steps.append((current, allowed, letter))
+        current = letter
+    return digits, steps
